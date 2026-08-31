@@ -47,7 +47,7 @@ open index.html
 ## File Structure
 
 ```
-vocab-app/
+vocabulum/
 ├── index.html          # Main app (all HTML, CSS, JS in one file)
 ├── vocab-de.js         # German vocabulary (~381 words, A1–C1, with IPA + examples)
 ├── vocab-la.js         # Latin vocabulary (150 words, 5 thematic levels, with IPA + examples)

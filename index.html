@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Vocab · DE · FR · ES · LA</title>
+<title>Vocabulum · DE · FR · ES · LA</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <script src="vocab-de.js"></script>
@@ -200,7 +200,7 @@ input[type=range]{width:100%;accent-color:var(--black)}
 <!-- ══ SIDEBAR ══ -->
 <div id="sidebar">
   <div id="sb-header">
-    <div class="app-title">Vocab</div>
+    <div class="app-title">Vocabulum</div>
     <div class="lang-row" id="lang-row"></div>
   </div>
   <div class="cefr-bar">
@@ -872,7 +872,7 @@ const app = (() => {
 
     // Language flag & title
     ctx.font='bold 26px Inter, sans-serif'; ctx.fillStyle='#fff';
-    ctx.fillText(LANGS[state.lang].flag + '  Vocab · ' + LANGS[state.lang].name, 36, 54);
+    ctx.fillText(LANGS[state.lang].flag + '  Vocabulum · ' + LANGS[state.lang].name, 36, 54);
 
     ctx.font='13px Inter, sans-serif'; ctx.fillStyle='rgba(255,255,255,.45)';
     ctx.fillText(new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'}), 36, 76);
@@ -962,7 +962,7 @@ const app = (() => {
 
     // Footer
     ctx.font='11px Inter, sans-serif'; ctx.fillStyle='rgba(255,255,255,.2)';
-    ctx.fillText('vocab-app', 36, H-18);
+    ctx.fillText('vocabulum', 36, H-18);
 
     // Download
     const link = document.createElement('a');
