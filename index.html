@@ -104,7 +104,10 @@ body{font-family:'Inter',sans-serif;background:#fff;color:var(--black);height:10
 .fc-reveal{width:100%;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none}
 .fc-reveal.show{opacity:1;transform:translateY(0);pointer-events:auto}
 .fc-example{border-left:3px solid #e8e8e8;padding-left:14px;margin-bottom:18px}
-.fc-ex-sent{font-size:15px;font-style:italic;color:#444;margin-bottom:3px}
+.fc-ex-row{display:flex;align-items:flex-start;gap:8px}
+.fc-ex-sent{font-size:15px;font-style:italic;color:#444;margin-bottom:3px;flex:1}
+.fc-ex-speak{background:none;border:none;cursor:pointer;color:#bbb;padding:2px 0 0;display:flex;align-items:center;flex-shrink:0}
+.fc-ex-speak:hover{color:#666}
 .fc-ex-tr{font-size:12px;color:#aaa}
 .fc-def{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .fc-pos-badge{background:var(--black);color:#fff;font-size:9px;font-weight:700;letter-spacing:.7px;padding:3px 9px;border-radius:4px;text-transform:uppercase}
@@ -272,7 +275,12 @@ input[type=range]{width:100%;accent-color:var(--black)}
       <div class="fc-hint" id="fc-hint">tap to reveal · space</div>
       <div class="fc-reveal" id="fc-reveal">
         <div class="fc-example" id="fc-ex-wrap">
-          <div class="fc-ex-sent" id="fc-ex-sent"></div>
+          <div class="fc-ex-row">
+            <div class="fc-ex-sent" id="fc-ex-sent"></div>
+            <button class="fc-ex-speak" onclick="event.stopPropagation();app.speakExample()" title="Listen to the sentence">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            </button>
+          </div>
           <div class="fc-ex-tr" id="fc-ex-tr"></div>
         </div>
         <div class="fc-def">
@@ -379,10 +387,12 @@ input[type=range]{width:100%;accent-color:var(--black)}
 // LANGUAGE CONFIG
 // ═══════════════════════════════════════════════════════════
 const LANGS = {
-  de: { name:'Deutsch', flag:'🇩🇪', code:'de-DE', lists: null },
-  fr: { name:'Français', flag:'🇫🇷', code:'fr-FR', lists: null },
-  es: { name:'Español',  flag:'🇪🇸', code:'es-ES', lists: null },
-  la: { name:'Latina',   flag:'🏛️', code:'la',    lists: null },
+  de: { name:'Deutsch', flag:'🇩🇪', code:'de-DE', speech:'de-DE', lists: null },
+  fr: { name:'Français', flag:'🇫🇷', code:'fr-FR', speech:'fr-FR', lists: null },
+  es: { name:'Español',  flag:'🇪🇸', code:'es-ES', speech:'es-ES', lists: null },
+  // No browser ships a Latin voice. Italian is the closest phonology and is
+  // what Ecclesiastical Latin pronunciation is taught from.
+  la: { name:'Latina',   flag:'🏛️', code:'la',    speech:'it-IT', lists: null },
 };
 
 // German + Latin loaded from separate files
@@ -833,16 +843,49 @@ const app = (() => {
     renderCard();
   }
 
-  function speak() {
+  // Chrome populates the voice list asynchronously — getVoices() is empty on a
+  // fresh load — so cache it and refresh on voiceschanged. Without this the
+  // first card of a session speaks with no voice attached.
+  let _voices = [];
+  function loadVoices() {
+    _voices = (window.speechSynthesis && window.speechSynthesis.getVoices()) || [];
+  }
+  if (window.speechSynthesis) {
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  }
+
+  // Safari and Chrome sometimes ignore utter.lang unless an actual voice is
+  // attached, which is how a French card ends up read aloud in English.
+  function voiceFor(lang) {
+    const want = (LANGS[lang].speech || LANGS[lang].code).toLowerCase();
+    if (!_voices.length) loadVoices();
+    const norm = v => v.lang.replace('_','-').toLowerCase();
+    return _voices.find(v => norm(v) === want)
+        || _voices.find(v => norm(v).startsWith(want.slice(0,2)))
+        || null;
+  }
+
+  function speak(text) {
     if (!window.speechSynthesis) return;
-    const w = session.queue[session.idx];
-    if (!w) return;
-    const text = w.w.replace(/^(der|die|das|le|la|l'|el|la|los|las)\s/i,'');
+    if (text === undefined) {
+      const w = session.queue[session.idx];
+      if (!w) return;
+      text = w.w.replace(/^(der|die|das|le|la|l'|el|los|las)\s/i,'');
+    }
+    if (!text) return;
     const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = LANGS[state.lang].code;
+    utter.lang = LANGS[state.lang].speech || LANGS[state.lang].code;
+    const v = voiceFor(state.lang);
+    if (v) utter.voice = v;
     utter.rate = state.settings.slowSpeech ? 0.7 : 0.9;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utter);
+  }
+
+  function speakExample() {
+    const w = session.queue[session.idx];
+    if (w && w.ex) speak(w.ex);
   }
 
   function exitSession() { showDash(); }
@@ -1121,7 +1164,7 @@ const app = (() => {
   }
 
   return {
-    init, setLang, startSession, reveal, rate, speak, exitSession,
+    init, setLang, startSession, reveal, rate, speak, speakExample, exitSession,
     openPurchase, closePurchase, confirmPurchase, buyStreak,
     openSettings, closeSettings, saveSettings, toggleSetting,
     shareProgress, showDash, importAnki
